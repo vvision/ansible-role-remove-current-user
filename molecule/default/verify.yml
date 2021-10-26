@@ -1,0 +1,25 @@
+---
+- name: Verify
+  hosts: all
+  remote_user: "{{ lookup('env','UNICODA_USER_TO_SWITCH_TO') }}"
+
+  tasks:
+    - name: Print current user
+      debug:
+        msg: "Current user id {{ ansible_user }}"
+
+    - name: get and set config from env
+      set_fact:
+        deleted_user: "{{ lookup('env','UNICODA_USER_TO_DELETE') }}"
+
+    # verify user is absent
+    - name: Get user state
+      user:
+        name: "{{ deleted_user }}"
+        state: absent
+      register: deleted_user_data
+
+    - name: Check if user is absent
+      assert:
+        that:
+          - deleted_user_data.state == "absent"

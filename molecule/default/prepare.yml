@@ -1,0 +1,31 @@
+---
+- name: Prepare
+  hosts: all
+  become: true
+  remote_user: "{{ lookup('env','UNICODA_USER_TO_SWITCH_TO') }}"
+
+  tasks:
+    - name: Ensure user to delete is available
+      user:
+        name: "{{ lookup('env','UNICODA_USER_TO_DELETE') }}"
+        groups: [ 'sudo' ]
+        password: "test"
+        state: present
+
+    # https://molecule.readthedocs.io/en/latest/examples.html#docker-with-non-privileged-user
+    # - name: Allow passwordless sudo
+    #  command: sed -i "/^%sudo/s/ALL\$/NOPASSWD:ALL/g" /etc/sudoers
+
+    - name: Ensure sudo group has sudo privileges
+      lineinfile:
+        dest: /etc/sudoers
+        state: present
+        regexp: "^%sudo"
+        line: "%sudo ALL=(ALL:ALL) NOPASSWD:ALL"
+
+    - name: Ensure user to delete has passwordless sudo privileges
+      lineinfile:
+        dest: /etc/sudoers
+        state: present
+        regexp: "^{{ lookup('env','UNICODA_USER_TO_DELETE') }}"
+        line: "{{ lookup('env','UNICODA_USER_TO_DELETE') }} ALL=(ALL:ALL) NOPASSWD:ALL"

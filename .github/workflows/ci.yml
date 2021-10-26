@@ -1,0 +1,73 @@
+---
+name: CI
+'on':
+  pull_request:
+  push:
+    branches:
+      - master
+
+jobs:
+
+  lint:
+    name: Lint
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out the codebase.
+        uses: actions/checkout@v2
+
+      - name: Set up Python 3.
+        uses: actions/setup-python@v2
+        with:
+          python-version: '3.x'
+
+      - name: Install test dependencies.
+        run: pip3 install yamllint
+
+      - name: Lint code.
+        run: |
+          yamllint .
+
+  test:
+    name: Molecule
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        distro:
+          - {
+              name: debian10,
+              image: geerlingguy/docker-debian10-ansible,
+              ansibleUser: admin,
+              userToSwitchTo: root
+          }
+          - {
+              name: pi,
+              image: vv1s10n/docker-raspberry-pi-os-ansible,
+              ansibleUser: pi,
+              userToSwitchTo: root
+          }
+
+    steps:
+      - name: Check out the codebase.
+        uses: actions/checkout@v2
+
+      - name: Install qemu-user-static
+        run: sudo apt-get install -y qemu-user-static
+        if: ${{ matrix.distro.name == 'pi' }}
+
+      - name: Set up Python 3.
+        uses: actions/setup-python@v2
+        with:
+          python-version: '3.x'
+
+      - name: Install test dependencies.
+        run: pip3 install ansible molecule[docker] yamllint ansible-lint
+
+      - name: Run Molecule tests.
+        run: molecule test
+        env:
+          PY_COLORS: '1'
+          ANSIBLE_FORCE_COLOR: '1'
+          MOLECULE_DISTRO: ${{ matrix.distro.image }}
+          UNICODA_USER_TO_DELETE: ${{ matrix.distro.ansibleUser }}
+          UNICODA_USER_TO_SWITCH_TO: ${{ matrix.distro.userToSwitchTo }}
+        # working-directory: molecule

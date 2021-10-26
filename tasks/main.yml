@@ -1,0 +1,28 @@
+---
+# From https://stackoverflow.com/a/58257737
+- name: Print current user
+  debug:
+    msg: "Current user id {{ ansible_user }}"
+
+# verify destination user is created
+- name: Get destination user state
+  user:
+    name: "{{ user_to_switch_to }}"
+  register: destination_user_data
+
+# first change the current ssh user to the new user
+- name: user | switch current user to {{ user_to_switch_to }}
+  set_fact:
+    current_user: "{{ ansible_user }}"
+    ansible_user: "{{ user_to_switch_to }}"
+  when: destination_user_data.state == "present"
+
+# force remove the old user
+- name: user | remove current user ({{ current_user }}) if it's not "{{ user_to_switch_to }}"
+  become: yes
+  user:
+    name: "{{ current_user }}"
+    state: absent
+    remove: yes
+    force: yes
+  when: destination_user_data.state == "present" and current_user != user_to_switch_to

@@ -1,0 +1,10 @@
+---
+- name: Converge
+  hosts: all
+  become: true
+  remote_user: "{{ lookup('env','UNICODA_USER_TO_DELETE') }}"
+
+  roles:
+    - role: vvision.remove_current_user
+      vars:
+        user_to_switch_to: "{{ lookup('env','UNICODA_USER_TO_SWITCH_TO') }}"
