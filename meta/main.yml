@@ -8,5 +8,4 @@ galaxy_info:
   license: "MIT"
   min_ansible_version: 2.6
   galaxy_tags:
-    - pi
-    - raspberry pi
+    - user
